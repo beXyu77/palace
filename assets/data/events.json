@@ -1,0 +1,478 @@
+[
+  {
+    "id": "E001",
+    "title": "清晨点卯",
+    "description": "今日清晨，你按时前往点卯，宫人来往频繁。",
+    "tags": ["daily"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E001_O1",
+        "text": "守规矩，安静候着",
+        "effect": {
+          "stats": { "fame": 2 },
+          "factions": { "empress": 1 }
+        }
+      },
+      {
+        "id": "E001_O2",
+        "text": "与身旁宫人低声闲聊",
+        "effect": {
+          "stats": { "scheming": 1 },
+          "factions": { "eunuchs": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E002",
+    "title": "赏花偶遇",
+    "description": "御花园中花开正盛，你恰好路过。",
+    "tags": ["daily", "favor"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E002_O1",
+        "text": "驻足赏花，整理仪容",
+        "effect": {
+          "stats": { "beauty": 2, "health": 1 }
+        }
+      },
+      {
+        "id": "E002_O2",
+        "text": "悄悄打听谁常来此处",
+        "effect": {
+          "stats": { "scheming": 2 },
+          "factions": { "eunuchs": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E003",
+    "title": "宫规抄写",
+    "description": "女官命你抄写宫规以示警醒。",
+    "tags": ["rule"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E003_O1",
+        "text": "一笔一划认真完成",
+        "effect": {
+          "stats": { "learning": 2, "fame": 1 },
+          "factions": { "dowager": 2 }
+        }
+      },
+      {
+        "id": "E003_O2",
+        "text": "草草应付",
+        "effect": {
+          "stats": { "fame": -2 },
+          "flagsAdd": ["violation_rule"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "E004",
+    "title": "内务府来人",
+    "description": "内务府宦官前来询问你的近况。",
+    "tags": ["faction"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E004_O1",
+        "text": "如实作答",
+        "effect": {
+          "stats": { "fame": 1 },
+          "factions": { "eunuchs": 1 }
+        }
+      },
+      {
+        "id": "E004_O2",
+        "text": "含糊其辞，留有余地",
+        "effect": {
+          "stats": { "scheming": 2 },
+          "factions": { "eunuchs": 2 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E005",
+    "title": "身体不适",
+    "description": "你感到些许乏力，精神不济。",
+    "tags": ["health"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E005_O1",
+        "text": "请太医诊脉",
+        "effect": {
+          "stats": { "health": 3 },
+          "factions": { "empress": 1 }
+        }
+      },
+      {
+        "id": "E005_O2",
+        "text": "忍一忍便好",
+        "effect": {
+          "stats": { "health": -2 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E006",
+    "title": "宫人议论",
+    "description": "你无意中听到几名宫人议论是非。",
+    "tags": ["risk"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E006_O1",
+        "text": "立刻离开",
+        "effect": {
+          "stats": { "fame": 1 }
+        }
+      },
+      {
+        "id": "E006_O2",
+        "text": "暗中记下内容",
+        "effect": {
+          "stats": { "scheming": 2 },
+          "flagsAdd": ["gossip_info"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "E007",
+    "title": "女官训诫",
+    "description": "女官对你的礼仪提出批评。",
+    "tags": ["rule"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E007_O1",
+        "text": "低头认错",
+        "effect": {
+          "stats": { "fame": 2 },
+          "factions": { "empress": 1 }
+        }
+      },
+      {
+        "id": "E007_O2",
+        "text": "心生不满",
+        "effect": {
+          "stats": { "scheming": 1 },
+          "flagsAdd": ["resentment"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "E008",
+    "title": "才艺展示机会",
+    "description": "有人提议让你展示才艺。",
+    "tags": ["talent", "favor"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E008_O1",
+        "text": "主动应下",
+        "effect": {
+          "stats": { "talent": 3, "favor": 1 }
+        }
+      },
+      {
+        "id": "E008_O2",
+        "text": "婉拒",
+        "effect": {
+          "stats": { "fame": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E009",
+    "title": "夜读宫史",
+    "description": "夜深人静，你翻阅旧宫史。",
+    "tags": ["learning"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E009_O1",
+        "text": "认真研读",
+        "effect": {
+          "stats": { "learning": 3 }
+        }
+      },
+      {
+        "id": "E009_O2",
+        "text": "草草翻过",
+        "effect": {
+          "stats": { "learning": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E010",
+    "title": "宫宴余波",
+    "description": "昨日宫宴后，各方反应不一。",
+    "tags": ["faction", "risk"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E010_O1",
+        "text": "保持低调",
+        "effect": {
+          "stats": { "fame": 1 }
+        }
+      },
+      {
+        "id": "E010_O2",
+        "text": "暗中结交",
+        "effect": {
+          "stats": { "scheming": 2 },
+          "factions": { "inlaws": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E011",
+    "title": "月例发放",
+    "description": "本月月例银到账。",
+    "tags": ["daily"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E011_O1",
+        "text": "谨慎收用",
+        "effect": {
+          "stats": { "fame": 1 }
+        }
+      },
+      {
+        "id": "E011_O2",
+        "text": "打点内侍",
+        "effect": {
+          "stats": { "scheming": 1 },
+          "factions": { "eunuchs": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E012",
+    "title": "晨练仪态",
+    "description": "女官检查你的行走仪态。",
+    "tags": ["daily"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E012_O1",
+        "text": "认真练习",
+        "effect": {
+          "stats": { "beauty": 1, "fame": 1 }
+        }
+      },
+      {
+        "id": "E012_O2",
+        "text": "敷衍了事",
+        "effect": {
+          "stats": { "fame": -1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E013",
+    "title": "太后问话",
+    "description": "太后随口询问近况。",
+    "tags": ["faction"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E013_O1",
+        "text": "恭敬作答",
+        "effect": {
+          "stats": { "fame": 2 },
+          "factions": { "dowager": 2 }
+        }
+      },
+      {
+        "id": "E013_O2",
+        "text": "谨慎回避",
+        "effect": {
+          "stats": { "scheming": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E014",
+    "title": "小病初愈",
+    "description": "身体渐渐恢复。",
+    "tags": ["health"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E014_O1",
+        "text": "继续调养",
+        "effect": {
+          "stats": { "health": 2 }
+        }
+      },
+      {
+        "id": "E014_O2",
+        "text": "恢复日常",
+        "effect": {
+          "stats": { "health": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E015",
+    "title": "暗潮涌动",
+    "description": "你察觉到后宫气氛微妙。",
+    "tags": ["risk"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E015_O1",
+        "text": "保持距离",
+        "effect": {
+          "stats": { "fame": 1 }
+        }
+      },
+      {
+        "id": "E015_O2",
+        "text": "深入观察",
+        "effect": {
+          "stats": { "scheming": 2 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E016",
+    "title": "书画练习",
+    "description": "你练习书画以打发时光。",
+    "tags": ["talent"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E016_O1",
+        "text": "专心练习",
+        "effect": {
+          "stats": { "talent": 2 }
+        }
+      },
+      {
+        "id": "E016_O2",
+        "text": "随意应付",
+        "effect": {
+          "stats": { "talent": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E017",
+    "title": "清流议论",
+    "description": "清流派对某些行为颇有微词。",
+    "tags": ["faction"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E017_O1",
+        "text": "谨守清名",
+        "effect": {
+          "stats": { "fame": 2 },
+          "factions": { "pure": 2 }
+        }
+      },
+      {
+        "id": "E017_O2",
+        "text": "不予理会",
+        "effect": {
+          "stats": { "scheming": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E018",
+    "title": "内廷试探",
+    "description": "有人暗示可为你通融。",
+    "tags": ["risk"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E018_O1",
+        "text": "拒绝",
+        "effect": {
+          "stats": { "fame": 2 }
+        }
+      },
+      {
+        "id": "E018_O2",
+        "text": "接受",
+        "effect": {
+          "stats": { "scheming": 2 },
+          "flagsAdd": ["secret_deal"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "E019",
+    "title": "闲谈家世",
+    "description": "有人提起你的出身。",
+    "tags": ["daily"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E019_O1",
+        "text": "谦逊应对",
+        "effect": {
+          "stats": { "family": 1 }
+        }
+      },
+      {
+        "id": "E019_O2",
+        "text": "顺势表现",
+        "effect": {
+          "stats": { "family": 2, "fame": -1 }
+        }
+      }
+    ]
+  },
+  {
+    "id": "E020",
+    "title": "夜深独处",
+    "description": "夜深无人，你独自思量前路。",
+    "tags": ["daily"],
+    "conditions": {},
+    "options": [
+      {
+        "id": "E020_O1",
+        "text": "谨慎规划",
+        "effect": {
+          "stats": { "scheming": 1, "learning": 1 }
+        }
+      },
+      {
+        "id": "E020_O2",
+        "text": "放松休息",
+        "effect": {
+          "stats": { "health": 1 }
+        }
+      }
+    ]
+  }
+]

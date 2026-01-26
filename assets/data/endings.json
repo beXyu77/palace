@@ -1,0 +1,38 @@
+[
+  {
+    "id": "main_empress",
+    "type": "main",
+    "title": "封后",
+    "description": "你以名声与权术踏至巅峰，六宫俯首。只是风高浪急，从此每一步都在刀锋之上。"
+  },
+  {
+    "id": "main_regent",
+    "type": "main",
+    "title": "皇贵妃掌六宫",
+    "description": "你不必为后，却握住宫务与规矩。赏罚出自你手，六宫秩序由你裁定。"
+  },
+  {
+    "id": "main_favor",
+    "type": "main",
+    "title": "宠冠后宫",
+    "description": "你以宠爱耀目，风头无两。可盛极易衰，人人都在等你的破绽。"
+  },
+  {
+    "id": "main_safe",
+    "type": "main",
+    "title": "安稳善终",
+    "description": "你不争不抢，谨慎自持。风波来时懂得退一步，最终保全一生。"
+  },
+  {
+    "id": "fail_cold",
+    "type": "fail",
+    "title": "冷宫幽禁",
+    "description": "你被弃置幽宫，门锁深深。旧日繁华化作一纸空梦，只余寒灯与长夜。"
+  },
+  {
+    "id": "fail_death",
+    "type": "fail",
+    "title": "被赐死",
+    "description": "旨意如霜。你明白有些局从一开始就不允许你走到最后。"
+  }
+]
