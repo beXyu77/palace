@@ -33,6 +33,13 @@ class AppTheme {
   static const Color factionPure = Color(0xFF9AD3DE); // 清流党
   static const Color factionMilitary = Color(0xFFC27D44); // 军功派
   static const Color factionEunuchs = Color(0xFF68657A); // 内廷势力
+  static const styleFavor = Color(0xFF904059);   // 红：宠爱向（偏胭脂）
+  static const stylePower = Color(0xFF2F5F8F);   // 蓝：权谋向（偏青黛）
+  static const styleVirtue = Color(0xFF2E6B5B);  // 绿：清名向（偏松青）
+  static const styleTalent = Color(0xFFC49A3A);  // 黄：才艺向（偏鎏金）
+  static const styleFamily = Color(0xFF6A4B8A);  // 紫：家世向（偏紫檀）
+  static const styleBalanced = Color(0xFF5E626D); // 灰：平衡向
+
 
   static Color factionColor(Faction f) {
     switch (f) {

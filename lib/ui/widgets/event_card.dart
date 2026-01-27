@@ -13,29 +13,22 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
       color: AppTheme.eventCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.black.withOpacity(0.06)),
-      ),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 事件标题
             Text(
               event.title,
               style: const TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.textMain,
+                fontWeight: FontWeight.w900,
               ),
             ),
-            const SizedBox(height: 8),
-
-            // 事件描述
+            const SizedBox(height: 10),
             Text(
               event.description,
               style: TextStyle(
