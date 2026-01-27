@@ -6,9 +6,9 @@ class AppTheme {
   AppTheme._();
 
   // ===== Base palette (Palace Classic) =====
-  static const Color background = Color(0xFFC6E5EF); // 宣纸青雾底
-  static const Color surface = Color(0xFFEBF4F1); // 玉石感卡片底
-  static const Color surfaceAlt = Color(0xFFE2C2CF); // 选项卡（偏绛粉，少量使用）
+  static const Color background = Color(0xFFD0DFE6);
+  static const Color surface = Color(0xFFF0FCF8);
+  static const Color surfaceAlt = Color(0xFFC7D2D4);
 
   static const Color textMain = Color(0xFF2B3541); // 墨青正文
   static const Color textSub = Color(0xFF5E626D); // 次级文字

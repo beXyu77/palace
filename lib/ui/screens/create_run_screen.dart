@@ -1,3 +1,6 @@
+// lib/ui/screens/create_run_screen.dart
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,18 +17,47 @@ class CreateRunScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
-  bool _inited = false;
+  bool _bootstrapped = false;
+  bool _readExtraOnce = false;
+
   String _openingStyle = 'balanced';
+  static const String _defaultName = '沈清辞';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // ✅ 从 go_router 的 extra 拿 openingStyle（最稳）
-    // 但在 Screen 内我们拿不到 GoRouterState，所以用 ModalRoute.arguments 兜底
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map && args['openingStyle'] is String) {
-      _openingStyle = args['openingStyle'] as String;
+    // ✅ 读取 openingStyle（只读一次）
+    if (!_readExtraOnce) {
+      _readExtraOnce = true;
+
+      String? style;
+
+      final extra = GoRouterState.of(context).extra;
+      if (extra is Map && extra['openingStyle'] is String) {
+        style = extra['openingStyle'] as String;
+      }
+
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (style == null && args is Map && args['openingStyle'] is String) {
+        style = args['openingStyle'] as String;
+      }
+
+      if (style != null && style.isNotEmpty) _openingStyle = style;
+    }
+
+    // ✅ 首次进入：初始化数据 + 创建 run + 应用开局倾向（只做一次）
+    if (!_bootstrapped) {
+      _bootstrapped = true;
+      final ctrl = ref.read(gameProvider.notifier);
+
+      Future.microtask(() async {
+        await ctrl.initData();
+        if (!mounted) return;
+        ctrl.newRunSelectedGirl();
+        ctrl.applyOpeningStyleSafe(_openingStyle);
+        if (mounted) setState(() {});
+      });
     }
   }
 
@@ -34,26 +66,13 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
     final run = ref.watch(gameProvider);
     final ctrl = ref.read(gameProvider.notifier);
 
-    // ✅ 首次进入主页：初始化数据 + 创建新 run + 应用开局倾向（只做一次）
-    if (!_inited) {
-      _inited = true;
-      Future.microtask(() async {
-        await ctrl.initData();
-        if (!mounted) return;
-        ctrl.newRunSelectedGirl();
-        ctrl.applyOpeningStyleSafe(_openingStyle);
-        setState(() {}); // 刷新显示
-      });
-    }
-
     final avatarPath =
         AssetPaths.avatarOpening[_openingStyle] ?? AssetPaths.avatarOpening['balanced']!;
-    final profile = _profileByStyle(_openingStyle);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: Text('紫宸宫 · ${profile.title}'),
+        title: const Text('紫宸宫'),
         centerTitle: true,
         leading: IconButton(
           tooltip: '返回重选路数',
@@ -62,190 +81,225 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 920),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // 顶部：专属主页信息卡
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.black.withOpacity(0.06)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 头像
-                        Container(
-                          width: 120,
-                          height: 120,
-                          clipBehavior: Clip.antiAlias,
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final w = c.maxWidth;
+
+            // 头像大小：手机端更合适
+            final avatarSize = math.max(84.0, math.min(118.0, w * 0.22));
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 920),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      // ✅ 顶部卡片（按你给的布局）
+                      _TopCard(
+                        avatarPath: avatarPath,
+                        avatarSize: avatarSize,
+                        name: _defaultName,
+                        rankName: _rankNameFromRun(run),
+                        month: run?.month ?? 1,
+                        day: run?.day ?? 1,
+                        run: run,
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // ✅ 今日要务：保持你之前的尺寸/布局（不缩小）
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: profile.accent.withOpacity(0.25)),
+                            color: AppTheme.surface,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: Colors.black.withOpacity(0.06)),
                           ),
-                          child: Image.asset(avatarPath, fit: BoxFit.cover),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: profile.accent.withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(color: profile.accent.withOpacity(0.22)),
-                                    ),
-                                    child: Text(
-                                      profile.identity,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w900,
-                                        color: AppTheme.textMain,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      profile.title,
-                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                                    ),
-                                  ),
-                                ],
+                              const Text(
+                                '今日要务',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                               ),
                               const SizedBox(height: 10),
-
-                              // 日/月信息（UI）
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: [
-                                  _infoChip('第 ${run?.month ?? 1} 月'),
-                                  _infoChip('第 ${run?.day ?? 1} 日'),
-                                  _infoChip('位份 Tier：${run?.rankTier ?? 1}'),
-                                ],
+                              Text(
+                                '点击开始，将触发今日事件（后续我们把事件做成弹窗覆盖在主页上）。',
+                                style: TextStyle(
+                                  color: AppTheme.textSub,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-
-                              const SizedBox(height: 10),
-
-                              // 8维属性（两列4行）
+                              const Spacer(),
                               SizedBox(
-                                height: 120, // 与头像高度一致
-                                child: _StatsGrid(run: run),
+                                width: 420,
+                                child: FilledButton(
+                                  onPressed: () {
+                                    ctrl.drawTodayEvent();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('已生成今日事件（下一步接弹窗）。')),
+                                    );
+                                  },
+                                  child: const Text('开始今日事件'),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Center(
+                                child: Text(
+                                  '你随时可以返回重选路数。',
+                                  style: TextStyle(
+                                    color: AppTheme.textSub.withOpacity(0.9),
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // 主页功能区（先做一个主按钮：开始今日事件）
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surface,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: Colors.black.withOpacity(0.06)),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('今日要务', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                          const SizedBox(height: 10),
-                          Text(
-                            '点击开始，将触发今日事件（后续我们把事件做成弹窗覆盖在主页上）。',
-                            style: TextStyle(color: AppTheme.textSub, fontWeight: FontWeight.w700),
-                          ),
-                          const Spacer(),
-                          SizedBox(
-                            width: 420,
-                            child: FilledButton(
-                              onPressed: () async {
-                                ctrl.drawTodayEvent();
-                                // TODO：下一步：showDialog 弹出 LoopPanel
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('已生成今日事件（下一步接弹窗）。')),
-                                );
-                              },
-                              child: const Text('开始今日事件'),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Center(
-                            child: Text(
-                              '你随时可以返回重选路数。',
-                              style: TextStyle(color: AppTheme.textSub.withOpacity(0.9), fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  _OpeningProfile _profileByStyle(String key) {
-    switch (key) {
-      case 'favor':
-        return _OpeningProfile('以色侍君', '宠爱向', AppTheme.styleFavor);
-      case 'power':
-        return _OpeningProfile('静水深流', '权谋向', AppTheme.stylePower);
-      case 'virtue':
-        return _OpeningProfile('守礼自保', '清名向', AppTheme.styleVirtue);
-      case 'talent':
-        return _OpeningProfile('以艺入局', '才艺向', AppTheme.styleTalent);
-      case 'family':
-        return _OpeningProfile('人脉权势', '家世向', AppTheme.styleFamily);
-      default:
-        return _OpeningProfile('选秀入宫', '平衡向', AppTheme.styleBalanced);
-    }
+  String _rankNameFromRun(dynamic run) {
+    try {
+      final v = run?.rankName;
+      if (v is String && v.trim().isNotEmpty) return v.trim();
+    } catch (_) {}
+    return '才人';
+  }
+}
+
+class _TopCard extends StatelessWidget {
+  final String avatarPath;
+  final double avatarSize;
+  final String name;
+  final String rankName;
+  final int month;
+  final int day;
+  final dynamic run;
+
+  const _TopCard({
+    required this.avatarPath,
+    required this.avatarSize,
+    required this.name,
+    required this.rankName,
+    required this.month,
+    required this.day,
+    required this.run,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 右侧数值区：每行高度更小一点
+    const rowGap = 8.0;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black.withOpacity(0.06)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 左：头像 + 名字位份 + 月日
+          SizedBox(
+            width: avatarSize,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: avatarSize,
+                  height: avatarSize,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.black.withOpacity(0.08)),
+                  ),
+                  child: Image.asset(avatarPath, fit: BoxFit.cover),
+                ),
+                const SizedBox(height: 10),
+
+                // ✅ 沈清辞 · 才人
+                Text(
+                  '$name  ·  $rankName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.textMain,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Row(
+                  children: [
+                    _chip('第 $month 月'),
+                    const SizedBox(width: 8),
+                    _chip('第 $day 日'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // 右：2×4 数值区（顶对齐头像）
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Column(
+                children: [
+                  _StatsGridCompact(run: run, gap: rowGap),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _infoChip(String text) {
+  static Widget _chip(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: AppTheme.surfaceAlt.withOpacity(0.45),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: Colors.black.withOpacity(0.06)),
       ),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          fontSize: 12,
+          color: AppTheme.textMain,
+        ),
+      ),
     );
   }
 }
 
-class _OpeningProfile {
-  final String title;
-  final String identity;
-  final Color accent;
-  _OpeningProfile(this.title, this.identity, this.accent);
-}
-
-class _StatsGrid extends StatelessWidget {
-  final dynamic run; // RunState?，避免你这边类型导入冲突
-  const _StatsGrid({required this.run});
+class _StatsGridCompact extends StatelessWidget {
+  final dynamic run;
+  final double gap;
+  const _StatsGridCompact({required this.run, required this.gap});
 
   static const _pairs = <List<String>>[
     ['favor', 'fame'],
@@ -268,17 +322,20 @@ class _StatsGrid extends StatelessWidget {
   int _v(String k) {
     final s = run?.stats;
     if (s == null) return 0;
-    final m = s.toMap() as Map<String, int>;
-    return m[k] ?? 0;
+    try {
+      final m = s.toMap() as Map<String, int>;
+      return m[k] ?? 0;
+    } catch (_) {
+      return 0;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: _pairs.map((row) {
-        return SizedBox(
-          height: 24,
+        return Padding(
+          padding: EdgeInsets.only(bottom: gap),
           child: Row(
             children: [
               Expanded(child: _pill('${_cn[row[0]]!}  ${_v(row[0])}')),
@@ -292,15 +349,18 @@ class _StatsGrid extends StatelessWidget {
   }
 
   Widget _pill(String text) {
+    // ✅ 数值栏更小：高度更矮、字体更小、内边距更小
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceAlt.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.surfaceAlt.withOpacity(0.40),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.black.withOpacity(0.06)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontWeight: FontWeight.w900,
           fontSize: 12,
@@ -338,6 +398,7 @@ extension _OpeningStyleApplySafe on GameController {
         delta = {};
         break;
     }
+
     rs.stats.applyDelta(delta);
     state = rs.copyWith(stats: rs.stats);
   }
