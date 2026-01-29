@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/asset_paths.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/game/game_controller.dart';
-import 'package:flutter/services.dart';
 
 class CreateRunScreen extends ConsumerStatefulWidget {
   final String? openingStyle; // ✅ 可空：继续人生时不传
@@ -25,37 +24,37 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
   Widget build(BuildContext context) {
     final run = ref.watch(gameProvider);
     final ctrl = ref.read(gameProvider.notifier);
-    final style = widget.openingStyle; // 可能为 null
 
-    // ✅ 只在必要时初始化：当没有 run 的时候才创建新人生
+    // ✅ 统一成一个非空 styleKey（永远有值）
+    final styleKey =
+    (widget.openingStyle != null && widget.openingStyle!.trim().isNotEmpty)
+        ? widget.openingStyle!.trim()
+        : (run?.openingStyle.isNotEmpty == true ? run!.openingStyle : 'balanced');
+
+    // ✅ 只初始化一次：仅当没有 run 时创建新人生 + 应用开局
     if (!_inited) {
       _inited = true;
       Future.microtask(() async {
         await ctrl.initData();
         if (!mounted) return;
 
-        // 只有在 run==null 才 newRun（避免返回后再次重置）
-        if (ref.read(gameProvider) == null) {
-          ctrl.newRunSelectedGirl();
-          // 只有选择路数进来才应用路数；继续人生不需要
-          if (style != null && style.isNotEmpty) {
-            ctrl.applyOpeningStyleSafe(style);
-          }
-        }
+        final rs = ref.read(gameProvider);
 
+        if (rs == null) {
+          // ✅ 第一次：创建 run -> 记录 openingStyle -> 应用加成
+          ctrl.newRunSelectedGirl();
+          ctrl.setOpeningStyle(styleKey);
+          ctrl.applyOpeningStyleSafe(styleKey);
+        }
+        // ✅ 继续人生：不 newRun、不再加成
         if (mounted) setState(() {});
       });
     }
-
-    // ✅ 展示头像：如果 style 为空，则使用 run 内保存的 style（暂时没有就 fallback balanced）
-    // 你目前 RunState 未存 openingStyle 的话，就先用：style ?? 'balanced'
-    final styleKey = (style != null && style.isNotEmpty) ? style : 'balanced';
 
     final avatarPath =
         AssetPaths.avatarOpening[styleKey] ?? AssetPaths.avatarOpening['balanced']!;
     final rankName = _rankNameByTier(run?.rankTier ?? 1);
 
-    // —— 下面 UI 你原来的保持不动，把 avatarPath/playerName/rankName/run 传下去即可 ——
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -82,7 +81,8 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
                     rankName: rankName,
                   ),
                   const SizedBox(height: 14),
-                  // 今日要务卡保持你原来的（略）
+
+                  // 今日要务卡（保持你原来的）
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -134,7 +134,10 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
                           Center(
                             child: Text(
                               '你随时可以返回开始页。',
-                              style: TextStyle(color: AppTheme.textSub.withOpacity(0.9), fontSize: 12),
+                              style: TextStyle(
+                                color: AppTheme.textSub.withOpacity(0.9),
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -150,7 +153,7 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
     );
   }
 
-  // ✅ tier -> 位份名（与你 rank.json tier 对齐）
+  // ✅ tier -> 位份名
   String _rankNameByTier(int tier) {
     switch (tier) {
       case 1:
@@ -177,29 +180,9 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
   }
 }
 
-class _DayText extends StatelessWidget {
-  final int month;
-  final int day;
-
-  const _DayText({required this.month, required this.day});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '第 $month 月 · 第 $day 日',
-      style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w700,
-        color: AppTheme.textSub.withOpacity(0.9),
-      ),
-    );
-  }
-}
-
-
 class _TopProfileCard extends StatelessWidget {
   final String avatarPath;
-  final dynamic run; // RunState?（避免你这边导入冲突）
+  final dynamic run;
   final String playerName;
   final String rankName;
 
@@ -244,14 +227,9 @@ class _TopProfileCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
-
-        // ✅ 小屏更大头像，但整体更紧凑，避免溢出
         final avatar = w < 360 ? 112.0 : 120.0;
         final gap = w < 360 ? 10.0 : 12.0;
         final cardPad = w < 360 ? 12.0 : 14.0;
-
-        final month = run?.month ?? 1;
-        final day = run?.day ?? 1;
 
         return Container(
           width: double.infinity,
@@ -264,7 +242,6 @@ class _TopProfileCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 左：头像 + 名字位份 + 月日
               SizedBox(
                 width: avatar,
                 child: Column(
@@ -281,17 +258,7 @@ class _TopProfileCard extends StatelessWidget {
                       child: Image.asset(
                         avatarPath,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stack) {
-                          return Center(
-                            child: Text(
-                              '找不到资源\n$avatarPath',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 10),
-                            ),
-                          );
-                        },
                       ),
-
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -300,22 +267,10 @@ class _TopProfileCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
                     ),
-                    const SizedBox(height: 6),
-                    // ✅ 月份日期同一行
-                    // Row(
-                    //   children: [
-                    //     Expanded(child: _TightChip('第 $month 月')),
-                    //     const SizedBox(width: 6),
-                    //     Expanded(child: _TightChip('第 $day 日')),
-                    //   ],
-                    // ),
                   ],
                 ),
               ),
-
               SizedBox(width: gap),
-
-              // 右：数值（2列4行）
               Expanded(
                 child: _StatsTightGrid(
                   keysInOrder: _order,
@@ -327,31 +282,6 @@ class _TopProfileCard extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _TightChip extends StatelessWidget {
-  final String text;
-  const _TightChip(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceAlt.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11),
-        ),
-      ),
     );
   }
 }
@@ -377,7 +307,7 @@ class _StatsTightGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
-        mainAxisExtent: 30, // ✅ 固定高度更紧凑，避免小屏溢出
+        mainAxisExtent: 30,
       ),
       itemBuilder: (context, i) {
         final k = keysInOrder[i];
@@ -422,7 +352,7 @@ class _StatsTightGrid extends StatelessWidget {
   }
 }
 
-/// ✅ 给 GameController 一个安全兜底：即使你 controller 没写 applyOpeningStyle 也能跑
+/// ✅ 兜底加成（仍然可用）
 extension _OpeningStyleApplySafe on GameController {
   void applyOpeningStyleSafe(String styleKey) {
     final rs = state;

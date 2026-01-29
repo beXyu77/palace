@@ -44,7 +44,7 @@ class StartScreen extends ConsumerWidget {
                   const SizedBox(height: 14),
 
                   if (!hasRun) ...[
-                    // ✅ 首次：显示 6 个入宫路数（只标题+身份）
+                    // ✅ 新用户：显示六个入宫路数
                     LayoutBuilder(
                       builder: (context, c) {
                         final w = c.maxWidth;
@@ -65,7 +65,6 @@ class StartScreen extends ConsumerWidget {
                             return _OpeningCard(
                               data: data,
                               onTap: () {
-                                // 选择路数 -> 进入 Create，并把 openingStyle 传过去
                                 context.go('/create', extra: {'openingStyle': data.key});
                               },
                             );
@@ -74,12 +73,15 @@ class StartScreen extends ConsumerWidget {
                       },
                     ),
                   ] else ...[
-                    // ✅ 已有 run：不显示路数，显示 继续 + 重生
+                    // ✅ 老用户：不显示路数，只显示 重生（+ 可选继续人生）
                     Row(
                       children: [
                         Expanded(
                           child: FilledButton(
-                            onPressed: () => context.go('/create'),
+                            onPressed: () {
+                              // ✅ 关键：继续人生必须带上 run.openingStyle
+                              context.go('/create', extra: {'openingStyle': run!.openingStyle});
+                            },
                             child: const Text('继续人生'),
                           ),
                         ),
@@ -88,7 +90,6 @@ class StartScreen extends ConsumerWidget {
                           child: OutlinedButton(
                             onPressed: () {
                               ctrl.resetRun();
-                              // 留在 Start 即可（UI 会自动变成“选择路数”）
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('已重生：请重新选择入宫路数')),
                               );
@@ -140,13 +141,8 @@ class _HeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            hasRun
-                ? '你可以继续当前人生，或选择重生改写命途。'
-                : '不同路数会影响开局属性与事件倾向。',
-            style: TextStyle(
-              color: AppTheme.textSub,
-              fontWeight: FontWeight.w700,
-            ),
+            hasRun ? '你可以继续当前人生，或选择重生改写命途。' : '不同路数会影响开局属性与事件倾向。',
+            style: TextStyle(color: AppTheme.textSub, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -214,11 +210,7 @@ class _OpeningCardData {
   final String key;
   final String title;
   final String identity;
-  const _OpeningCardData({
-    required this.key,
-    required this.title,
-    required this.identity,
-  });
+  const _OpeningCardData({required this.key, required this.title, required this.identity});
 }
 
 class _OpeningCard extends StatelessWidget {
@@ -228,8 +220,7 @@ class _OpeningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarPath =
-        AssetPaths.avatarOpening[data.key] ?? AssetPaths.avatarOpening['balanced']!;
+    final avatarPath = AssetPaths.avatarOpening[data.key] ?? AssetPaths.avatarOpening['balanced']!;
 
     return InkWell(
       onTap: onTap,

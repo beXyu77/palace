@@ -121,3 +121,9 @@ lib/
         ├── option_button.dart
         ├── stat_chip.dart
         └── palace_modal.dart        # 中央弹窗容器
+```
+
+---
+#### 可加入的一些功能
+- 集邮（集齐所有结局）
+- 存档/存档命名

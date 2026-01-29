@@ -1,3 +1,4 @@
+// lib/features/game/game_controller.dart
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,15 +21,23 @@ class GameController extends StateNotifier<RunState?> {
   List<EventDef> _events = [];
   List<EndingDef> _endings = [];
 
+  bool _loaded = false;
+
   Future<void> initData() async {
+    if (_loaded) return;
     final repo = ref.read(repoProvider);
     _ranks = await repo.loadRanks();
     _events = await repo.loadEvents();
     _endings = await repo.loadEndings();
+    _loaded = true;
   }
 
   RankDef get currentRankDef {
     final tier = state?.rankTier ?? 1;
+    if (_ranks.isEmpty) {
+      // 兜底：防止 UI 先读
+      return RankDef(id: 'cairen', name: '才人', tier: 1, riskMultiplier: 1.0);
+    }
     return _ranks.firstWhere((r) => r.tier == tier, orElse: () => _ranks.first);
   }
 
@@ -40,13 +49,15 @@ class GameController extends StateNotifier<RunState?> {
     }
   }
 
-  void newRunSelectedGirl() {
+  /// ✅ 新开局：开局就写入 openingStyle（关键）
+  void newRunSelectedGirl({String openingStyle = 'balanced'}) {
     final s = Stats.newbieTemplate(_rng);
 
     state = RunState(
       day: 1,
       month: 1,
       rankTier: 1,
+      openingStyle: openingStyle, // ✅ 新增
       stats: s,
       factionAtt: {
         Faction.dowager: 0,
@@ -62,6 +73,16 @@ class GameController extends StateNotifier<RunState?> {
       lastFactionDelta: const {},
       endingId: null,
     );
+  }
+
+  void resetRun() {
+    state = null;
+  }
+
+  void setOpeningStyle(String styleKey) {
+    final rs = state;
+    if (rs == null) return;
+    state = rs.copyWith(openingStyle: styleKey);
   }
 
   bool _checkConditions(EventDef e, RunState rs) {
@@ -91,6 +112,11 @@ class GameController extends StateNotifier<RunState?> {
   }
 
   EventDef _pickEvent(RunState rs) {
+    if (_events.isEmpty) {
+      // 兜底：防止 JSON 未加载就抽事件
+      throw StateError('Events not loaded. Call initData() before drawing events.');
+    }
+
     final pool = _events.where((e) => _checkConditions(e, rs)).toList();
     if (pool.isEmpty) return _events.first;
 
@@ -110,6 +136,7 @@ class GameController extends StateNotifier<RunState?> {
   void drawTodayEvent() {
     final rs = state;
     if (rs == null) return;
+
     final e = _pickEvent(rs);
     state = rs.copyWith(
       currentEvent: e,
@@ -129,7 +156,7 @@ class GameController extends StateNotifier<RunState?> {
     final newFactionAtt = Map<Faction, int>.from(rs0.factionAtt);
     final newFlags = Set<String>.from(rs0.flags);
 
-    // delta（num -> int）
+    // stats delta（num -> int）
     final statDelta = <String, int>{};
     eff.stats.forEach((k, v) => statDelta[k] = (v as num).toInt());
 
@@ -149,8 +176,9 @@ class GameController extends StateNotifier<RunState?> {
     for (final f in eff.flagsAdd) newFlags.add(f);
     for (final f in eff.flagsRemove) newFlags.remove(f);
 
+    // ✅ 位份范围：1–9
     final rankDelta = (eff.rankDelta as num).toInt();
-    final newTier = (rs0.rankTier + rankDelta).clamp(1, 5);
+    final newTier = (rs0.rankTier + rankDelta).clamp(1, 9);
 
     final endingId = eff.immediateEndingId;
 
@@ -224,7 +252,8 @@ class GameController extends StateNotifier<RunState?> {
       rankDelta = -1;
     }
 
-    final newTier = (rs0.rankTier + rankDelta).clamp(1, 5);
+    // ✅ 位份范围：1–9
+    final newTier = (rs0.rankTier + rankDelta).clamp(1, 9);
 
     state = rs0.copyWith(rankTier: newTier, flags: newFlags);
 
@@ -242,12 +271,10 @@ class GameController extends StateNotifier<RunState?> {
       'newTier': newTier,
     };
   }
-  void resetRun() {
-    state = null;
-  }
 
   void _checkMainEndings() {
     final rs = state!;
+    // 你主线结局逻辑先保留，后续你要按 1–9 体系重调阈值也行
     if (rs.rankTier >= 5 && rs.stats.fame >= 85 && rs.stats.scheming >= 70) {
       state = rs.copyWith(endingId: 'main_empress');
       return;

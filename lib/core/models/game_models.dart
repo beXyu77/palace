@@ -193,36 +193,42 @@ class EndingDef {
 }
 
 class RunState {
-  int day; // 1..30
-  int month; // 1..
-  int rankTier; // 与 RankDef.tier 对齐
-  Stats stats;
-  Map<Faction, int> factionAtt; // -100..100
-  Set<String> flags;
+  final int day;
+  final int month;
+  final int rankTier;
 
-  // 本日事件/结算（给 UI 展示）
-  EventDef? currentEvent;
-  Map<String, int> lastStatDelta;
-  Map<Faction, int> lastFactionDelta;
-  String? endingId;
+  /// ✅ 新增：记录开局路数（favor/power/.../balanced）
+  final String openingStyle;
 
-  RunState({
+  final Stats stats;
+  final Map<Faction, int> factionAtt;
+  final Set<String> flags;
+
+  final EventDef? currentEvent;
+  final Map<String, int> lastStatDelta;
+  final Map<Faction, int> lastFactionDelta;
+
+  final String? endingId;
+
+  const RunState({
     required this.day,
     required this.month,
     required this.rankTier,
+    required this.openingStyle, // ✅ 新增
     required this.stats,
     required this.factionAtt,
     required this.flags,
-    this.currentEvent,
-    this.lastStatDelta = const {},
-    this.lastFactionDelta = const {},
-    this.endingId,
+    required this.currentEvent,
+    required this.lastStatDelta,
+    required this.lastFactionDelta,
+    required this.endingId,
   });
 
   RunState copyWith({
     int? day,
     int? month,
     int? rankTier,
+    String? openingStyle, // ✅ 新增
     Stats? stats,
     Map<Faction, int>? factionAtt,
     Set<String>? flags,
@@ -235,6 +241,7 @@ class RunState {
       day: day ?? this.day,
       month: month ?? this.month,
       rankTier: rankTier ?? this.rankTier,
+      openingStyle: openingStyle ?? this.openingStyle, // ✅ 新增
       stats: stats ?? this.stats,
       factionAtt: factionAtt ?? this.factionAtt,
       flags: flags ?? this.flags,
