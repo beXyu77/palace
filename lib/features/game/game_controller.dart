@@ -15,11 +15,13 @@ class GameController extends StateNotifier<RunState?> {
   GameController(this.ref) : super(null);
 
   final Ref ref;
-  final _rng = Random();
+  final Random _rng = Random();
 
   List<RankDef> _ranks = [];
   List<EventDef> _events = [];
   List<EndingDef> _endings = [];
+
+  static const String defaultPlayerName = '沈清辞';
 
   bool _loaded = false;
 
@@ -35,7 +37,7 @@ class GameController extends StateNotifier<RunState?> {
   RankDef get currentRankDef {
     final tier = state?.rankTier ?? 1;
     if (_ranks.isEmpty) {
-      // 兜底：防止 UI 先读
+      // 兜底，防止 UI 先读
       return RankDef(id: 'cairen', name: '才人', tier: 1, riskMultiplier: 1.0);
     }
     return _ranks.firstWhere((r) => r.tier == tier, orElse: () => _ranks.first);
@@ -49,7 +51,7 @@ class GameController extends StateNotifier<RunState?> {
     }
   }
 
-  /// ✅ 新开局：开局就写入 openingStyle（关键）
+  /// ✅ 新开局（把 openingStyle & 默认名字写入 state）
   void newRunSelectedGirl({String openingStyle = 'balanced'}) {
     final s = Stats.newbieTemplate(_rng);
 
@@ -57,7 +59,8 @@ class GameController extends StateNotifier<RunState?> {
       day: 1,
       month: 1,
       rankTier: 1,
-      openingStyle: openingStyle, // ✅ 新增
+      playerName: defaultPlayerName,
+      openingStyle: openingStyle,
       stats: s,
       factionAtt: {
         Faction.dowager: 0,
@@ -75,14 +78,25 @@ class GameController extends StateNotifier<RunState?> {
     );
   }
 
-  void resetRun() {
-    state = null;
+  /// ✅ 改名（命名功能用）
+  void setPlayerName(String name) {
+    final rs = state;
+    if (rs == null) return;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    state = rs.copyWith(playerName: trimmed);
   }
 
+  /// ✅ 记录开局路数（用于“继续人生”正确显示头像/倾向）
   void setOpeningStyle(String styleKey) {
     final rs = state;
     if (rs == null) return;
     state = rs.copyWith(openingStyle: styleKey);
+  }
+
+  /// ✅ 重生：清空本次人生
+  void resetRun() {
+    state = null;
   }
 
   bool _checkConditions(EventDef e, RunState rs) {
@@ -113,7 +127,6 @@ class GameController extends StateNotifier<RunState?> {
 
   EventDef _pickEvent(RunState rs) {
     if (_events.isEmpty) {
-      // 兜底：防止 JSON 未加载就抽事件
       throw StateError('Events not loaded. Call initData() before drawing events.');
     }
 
@@ -274,7 +287,6 @@ class GameController extends StateNotifier<RunState?> {
 
   void _checkMainEndings() {
     final rs = state!;
-    // 你主线结局逻辑先保留，后续你要按 1–9 体系重调阈值也行
     if (rs.rankTier >= 5 && rs.stats.fame >= 85 && rs.stats.scheming >= 70) {
       state = rs.copyWith(endingId: 'main_empress');
       return;

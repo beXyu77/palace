@@ -199,6 +199,7 @@ class RunState {
 
   /// ✅ 新增：记录开局路数（favor/power/.../balanced）
   final String openingStyle;
+  final String playerName;
 
   final Stats stats;
   final Map<Faction, int> factionAtt;
@@ -215,6 +216,7 @@ class RunState {
     required this.month,
     required this.rankTier,
     required this.openingStyle, // ✅ 新增
+    required this.playerName,
     required this.stats,
     required this.factionAtt,
     required this.flags,
@@ -229,6 +231,7 @@ class RunState {
     int? month,
     int? rankTier,
     String? openingStyle, // ✅ 新增
+    String? playerName,
     Stats? stats,
     Map<Faction, int>? factionAtt,
     Set<String>? flags,
@@ -241,7 +244,8 @@ class RunState {
       day: day ?? this.day,
       month: month ?? this.month,
       rankTier: rankTier ?? this.rankTier,
-      openingStyle: openingStyle ?? this.openingStyle, // ✅ 新增
+      openingStyle: openingStyle ?? this.openingStyle,
+      playerName: playerName ?? this.playerName,
       stats: stats ?? this.stats,
       factionAtt: factionAtt ?? this.factionAtt,
       flags: flags ?? this.flags,

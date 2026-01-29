@@ -8,7 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../features/game/game_controller.dart';
 
 class CreateRunScreen extends ConsumerStatefulWidget {
-  final String? openingStyle; // ✅ 可空：继续人生时不传
+  final String? openingStyle; // 可空：继续人生时不传
   const CreateRunScreen({super.key, this.openingStyle});
 
   @override
@@ -18,18 +18,17 @@ class CreateRunScreen extends ConsumerStatefulWidget {
 class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
   bool _inited = false;
 
-  static const String _defaultPlayerName = '沈清辞';
-
   @override
   Widget build(BuildContext context) {
     final run = ref.watch(gameProvider);
     final ctrl = ref.read(gameProvider.notifier);
 
-    // ✅ 统一成一个非空 styleKey（永远有值）
+    // ✅ 统一一个永远非空的 styleKey：
+    // 1) 优先用路由传入；2) 否则用 run 里记录的 openingStyle；3) 否则 balanced
     final styleKey =
     (widget.openingStyle != null && widget.openingStyle!.trim().isNotEmpty)
         ? widget.openingStyle!.trim()
-        : (run?.openingStyle.isNotEmpty == true ? run!.openingStyle : 'balanced');
+        : ((run?.openingStyle ?? '').isNotEmpty ? run!.openingStyle : 'balanced');
 
     // ✅ 只初始化一次：仅当没有 run 时创建新人生 + 应用开局
     if (!_inited) {
@@ -39,14 +38,11 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
         if (!mounted) return;
 
         final rs = ref.read(gameProvider);
-
         if (rs == null) {
-          // ✅ 第一次：创建 run -> 记录 openingStyle -> 应用加成
-          ctrl.newRunSelectedGirl();
-          ctrl.setOpeningStyle(styleKey);
+          // 第一次：创建 run -> 记录 openingStyle -> 应用加成
+          ctrl.newRunSelectedGirl(openingStyle: styleKey);
           ctrl.applyOpeningStyleSafe(styleKey);
         }
-        // ✅ 继续人生：不 newRun、不再加成
         if (mounted) setState(() {});
       });
     }
@@ -77,12 +73,13 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
                   _TopProfileCard(
                     avatarPath: avatarPath,
                     run: run,
-                    playerName: _defaultPlayerName,
+                    playerName: run?.playerName ?? GameController.defaultPlayerName,
                     rankName: rankName,
+                    onTapRename: () => _showRenameDialog(context, ref),
                   ),
                   const SizedBox(height: 14),
 
-                  // 今日要务卡（保持你原来的）
+                  // 今日要务卡：保持你原来的大卡片
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -121,7 +118,7 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
                           SizedBox(
                             width: 420,
                             child: FilledButton(
-                              onPressed: () async {
+                              onPressed: () {
                                 ctrl.drawTodayEvent();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('已生成今日事件（下一步接弹窗）。')),
@@ -153,7 +150,7 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
     );
   }
 
-  // ✅ tier -> 位份名
+  // ✅ tier -> 位份名（1–9）
   String _rankNameByTier(int tier) {
     switch (tier) {
       case 1:
@@ -182,17 +179,20 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
 
 class _TopProfileCard extends StatelessWidget {
   final String avatarPath;
-  final dynamic run;
+  final dynamic run; // RunState?
   final String playerName;
   final String rankName;
+  final VoidCallback onTapRename;
 
   const _TopProfileCard({
     required this.avatarPath,
     required this.run,
     required this.playerName,
     required this.rankName,
+    required this.onTapRename,
   });
 
+  // ✅ 取数：run.stats.toMap() -> Map<String,int>
   int _v(String k) {
     final s = run?.stats;
     if (s == null) return 0;
@@ -200,6 +200,7 @@ class _TopProfileCard extends StatelessWidget {
     return m[k] ?? 0;
   }
 
+  // ✅ 8 维顺序
   static const _order = <String>[
     'favor',
     'fame',
@@ -211,6 +212,7 @@ class _TopProfileCard extends StatelessWidget {
     'learning',
   ];
 
+  // ✅ 中文名
   static const _cn = <String, String>{
     'favor': '宠爱',
     'fame': '名声',
@@ -255,17 +257,31 @@ class _TopProfileCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: Colors.black.withOpacity(0.10)),
                       ),
-                      child: Image.asset(
-                        avatarPath,
-                        fit: BoxFit.cover,
-                      ),
+                      child: Image.asset(avatarPath, fit: BoxFit.cover),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      '$playerName · $rankName',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+
+                    // ✅ 名字可点击修改
+                    InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: onTapRename,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '$playerName · $rankName',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(Icons.edit_rounded, size: 16, color: AppTheme.textSub),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -352,7 +368,7 @@ class _StatsTightGrid extends StatelessWidget {
   }
 }
 
-/// ✅ 兜底加成（仍然可用）
+/// ✅ 兜底加成：只在“新开局”时调用
 extension _OpeningStyleApplySafe on GameController {
   void applyOpeningStyleSafe(String styleKey) {
     final rs = state;
@@ -383,4 +399,44 @@ extension _OpeningStyleApplySafe on GameController {
     rs.stats.applyDelta(delta);
     state = rs.copyWith(stats: rs.stats);
   }
+}
+
+Future<void> _showRenameDialog(BuildContext context, WidgetRef ref) async {
+  final ctrl = ref.read(gameProvider.notifier);
+  final current = ref.read(gameProvider)?.playerName ?? GameController.defaultPlayerName;
+
+  final tec = TextEditingController(text: current);
+
+  final newName = await showDialog<String>(
+    context: context,
+    builder: (ctx) {
+      return AlertDialog(
+        title: const Text('修改名字'),
+        content: TextField(
+          controller: tec,
+          autofocus: true,
+          maxLength: 8,
+          decoration: const InputDecoration(
+            hintText: '请输入名字（最多8字）',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(tec.text),
+            child: const Text('保存'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (newName == null) return;
+  final name = newName.trim();
+  if (name.isEmpty) return;
+
+  ctrl.setPlayerName(name);
 }
