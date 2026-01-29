@@ -135,10 +135,10 @@ class StartScreen extends StatelessWidget {
                     onShowCredits: () {
                       showAboutDialog(
                         context: context,
-                        applicationName: '后宫升职记 · 大晟',
-                        applicationVersion: '0.1.0',
+                        applicationName: '后宫升职记',
+                        applicationVersion: 'v.0.1.0',
                         children: const [
-                          Text('架空王朝互动模拟 · 事件驱动 · 多结局'),
+                          Text('架空王朝互动模拟\n事件驱动 · 多结局'),
                         ],
                       );
                     },

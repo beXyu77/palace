@@ -17,7 +17,18 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const StartScreen()),
-    GoRoute(path: '/create', builder: (context, state) => const CreateRunScreen()),
+    GoRoute(
+      path: '/create',
+      builder: (context, state) {
+        final extra = state.extra;
+        final openingStyle = (extra is Map && extra['openingStyle'] is String)
+            ? extra['openingStyle'] as String
+            : 'balanced';
+
+        return CreateRunScreen(openingStyle: openingStyle);
+      },
+    ),
+
     GoRoute(path: '/loop', builder: (context, state) => const LoopScreen()),
     GoRoute(path: '/monthEnd', builder: (context, state) => const MonthEndScreen()),
     GoRoute(path: '/ending', builder: (context, state) => const EndingScreen()),

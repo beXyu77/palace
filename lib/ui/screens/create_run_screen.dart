@@ -9,7 +9,8 @@ import '../../features/game/game_controller.dart';
 import 'package:flutter/services.dart';
 
 class CreateRunScreen extends ConsumerStatefulWidget {
-  const CreateRunScreen({super.key});
+  final String openingStyle;
+  const CreateRunScreen({super.key, required this.openingStyle});
 
   @override
   ConsumerState<CreateRunScreen> createState() => _CreateRunScreenState();
@@ -17,26 +18,16 @@ class CreateRunScreen extends ConsumerStatefulWidget {
 
 class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
   bool _inited = false;
-  String _openingStyle = 'balanced';
 
-  // ✅ 先不做改名功能，默认名字
+  // ✅ 默认名字
   static const String _defaultPlayerName = '沈清辞';
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    // 兜底：从 ModalRoute.arguments 拿 openingStyle
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map && args['openingStyle'] is String) {
-      _openingStyle = args['openingStyle'] as String;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final run = ref.watch(gameProvider);
     final ctrl = ref.read(gameProvider.notifier);
+
+    final openingStyle = widget.openingStyle;
 
     if (!_inited) {
       _inited = true;
@@ -44,14 +35,15 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
         await ctrl.initData();
         if (!mounted) return;
         ctrl.newRunSelectedGirl();
-        ctrl.applyOpeningStyleSafe(_openingStyle);
+        ctrl.applyOpeningStyleSafe(openingStyle);
         if (mounted) setState(() {});
-        debugLoadAsset();
       });
     }
 
+
     final avatarPath =
-        AssetPaths.avatarOpening[_openingStyle] ?? AssetPaths.avatarOpening['balanced']!;
+        AssetPaths.avatarOpening[openingStyle] ?? AssetPaths.avatarOpening['balanced']!;
+
     final rankName = _rankNameByTier(run?.rankTier ?? 1);
 
     return Scaffold(
