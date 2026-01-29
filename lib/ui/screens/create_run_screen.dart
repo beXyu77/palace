@@ -9,8 +9,8 @@ import '../../features/game/game_controller.dart';
 import 'package:flutter/services.dart';
 
 class CreateRunScreen extends ConsumerStatefulWidget {
-  final String openingStyle;
-  const CreateRunScreen({super.key, required this.openingStyle});
+  final String? openingStyle; // ✅ 可空：继续人生时不传
+  const CreateRunScreen({super.key, this.openingStyle});
 
   @override
   ConsumerState<CreateRunScreen> createState() => _CreateRunScreenState();
@@ -19,40 +19,50 @@ class CreateRunScreen extends ConsumerStatefulWidget {
 class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
   bool _inited = false;
 
-  // ✅ 默认名字
   static const String _defaultPlayerName = '沈清辞';
 
   @override
   Widget build(BuildContext context) {
     final run = ref.watch(gameProvider);
     final ctrl = ref.read(gameProvider.notifier);
+    final style = widget.openingStyle; // 可能为 null
 
-    final openingStyle = widget.openingStyle;
-
+    // ✅ 只在必要时初始化：当没有 run 的时候才创建新人生
     if (!_inited) {
       _inited = true;
       Future.microtask(() async {
         await ctrl.initData();
         if (!mounted) return;
-        ctrl.newRunSelectedGirl();
-        ctrl.applyOpeningStyleSafe(openingStyle);
+
+        // 只有在 run==null 才 newRun（避免返回后再次重置）
+        if (ref.read(gameProvider) == null) {
+          ctrl.newRunSelectedGirl();
+          // 只有选择路数进来才应用路数；继续人生不需要
+          if (style != null && style.isNotEmpty) {
+            ctrl.applyOpeningStyleSafe(style);
+          }
+        }
+
         if (mounted) setState(() {});
       });
     }
 
+    // ✅ 展示头像：如果 style 为空，则使用 run 内保存的 style（暂时没有就 fallback balanced）
+    // 你目前 RunState 未存 openingStyle 的话，就先用：style ?? 'balanced'
+    final styleKey = (style != null && style.isNotEmpty) ? style : 'balanced';
 
     final avatarPath =
-        AssetPaths.avatarOpening[openingStyle] ?? AssetPaths.avatarOpening['balanced']!;
-
+        AssetPaths.avatarOpening[styleKey] ?? AssetPaths.avatarOpening['balanced']!;
     final rankName = _rankNameByTier(run?.rankTier ?? 1);
 
+    // —— 下面 UI 你原来的保持不动，把 avatarPath/playerName/rankName/run 传下去即可 ——
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text('紫宸宫'),
         centerTitle: true,
         leading: IconButton(
-          tooltip: '返回重选路数',
+          tooltip: '返回开始页',
           onPressed: () => context.go('/'),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
@@ -72,7 +82,7 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
                     rankName: rankName,
                   ),
                   const SizedBox(height: 14),
-                  // ✅ 今日要务：保持你之前那种大卡片风格
+                  // 今日要务卡保持你原来的（略）
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -92,7 +102,14 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                               ),
                               const Spacer(),
-                              _DayText(month: run?.month ?? 1, day: run?.day ?? 1),
+                              Text(
+                                '第 ${run?.month ?? 1} 月 · 第 ${run?.day ?? 1} 日',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textSub.withOpacity(0.9),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -116,7 +133,7 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
                           const SizedBox(height: 10),
                           Center(
                             child: Text(
-                              '你随时可以返回重选路数。',
+                              '你随时可以返回开始页。',
                               style: TextStyle(color: AppTheme.textSub.withOpacity(0.9), fontSize: 12),
                             ),
                           ),
@@ -133,18 +150,7 @@ class _CreateRunScreenState extends ConsumerState<CreateRunScreen> {
     );
   }
 
-
-  Future<void> debugLoadAsset() async {
-    const p = 'assets/images/avatars/opening/avatar_favor_01.png';
-    try {
-      await rootBundle.load(p);
-      debugPrint('✅ asset ok: $p');
-    } catch (e) {
-      debugPrint('❌ asset fail: $p\n$e');
-    }
-  }
-
-  // ✅ tier -> 位份名（与你 rank.json 的 tier 对齐）
+  // ✅ tier -> 位份名（与你 rank.json tier 对齐）
   String _rankNameByTier(int tier) {
     switch (tier) {
       case 1:

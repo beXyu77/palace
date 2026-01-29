@@ -242,6 +242,9 @@ class GameController extends StateNotifier<RunState?> {
       'newTier': newTier,
     };
   }
+  void resetRun() {
+    state = null;
+  }
 
   void _checkMainEndings() {
     final rs = state!;
